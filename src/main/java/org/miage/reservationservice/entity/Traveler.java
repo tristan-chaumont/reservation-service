@@ -1,5 +1,6 @@
 package org.miage.reservationservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -23,8 +24,10 @@ public class Traveler implements Serializable {
     @Id
     @Column(name = "traveler_id")
     private String travelerId;
+    @Column(name = "name")
     private String name;
 
+    @JsonBackReference
     @OneToMany(mappedBy = "traveler", fetch = FetchType.LAZY)
     @ToString.Exclude
     private List<Reservation> reservations;

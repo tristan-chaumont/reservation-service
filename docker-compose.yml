@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  train-pg:
+    image: 'postgres:13.1-alpine'
+    container_name: db
+    environment:
+      - POSTGRES_USER=ReservationService
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=ReservationService
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+volumes:
+  data:

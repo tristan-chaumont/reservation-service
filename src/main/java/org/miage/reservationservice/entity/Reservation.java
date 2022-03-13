@@ -23,12 +23,15 @@ public class Reservation implements Serializable {
     @Id
     @Column(name = "reservation_id")
     private String reservationId;
+
     @ManyToOne
-    @JoinColumn(name = "travaler_id")
+    @JoinColumn(name = "traveler_id")
     private Traveler traveler;
+
     @ManyToOne
     @JoinColumn(name = "trip_id")
     private Trip trip;
+
     @Column(name = "window_seat")
     private boolean windowSeat;
 

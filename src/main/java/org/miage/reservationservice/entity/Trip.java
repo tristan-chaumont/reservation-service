@@ -1,5 +1,6 @@
 package org.miage.reservationservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -7,6 +8,8 @@ import javax.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,11 +36,12 @@ public class Trip implements Serializable {
     @Column(name = "arrival_city")
     private String arrivalCity;
     @Column(name = "departure_time")
-    private Time departureTime;
+    private LocalDateTime departureTime;
     @Column(name = "arrival_time")
-    private Time arrivalTime;
+    private LocalDateTime arrivalTime;
     private double price;
 
+    @JsonBackReference
     @OneToMany(mappedBy = "trip", fetch = FetchType.LAZY)
     @ToString.Exclude
     private List<Reservation> reservations;
