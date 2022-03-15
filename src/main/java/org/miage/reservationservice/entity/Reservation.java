@@ -2,6 +2,7 @@ package org.miage.reservationservice.entity;
 
 import lombok.*;
 import org.hibernate.Hibernate;
+import org.miage.reservationservice.types.ReservationStatus;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -34,6 +35,9 @@ public class Reservation implements Serializable {
 
     @Column(name = "window_seat")
     private boolean windowSeat;
+
+    @Column(name = "status")
+    private ReservationStatus status;
 
     @Override
     public boolean equals(Object o) {

@@ -32,6 +32,11 @@ public class Traveler implements Serializable {
     @ToString.Exclude
     private List<Reservation> reservations;
 
+    public Traveler(String travelerId, String name) {
+        this.travelerId = travelerId;
+        this.name = name;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
