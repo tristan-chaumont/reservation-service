@@ -63,8 +63,8 @@ class ReservationRepresentationTests {
                 LocalDateTime.of(2022, 1, 1, 1, 1, 1),
                 LocalDateTime.of(2022, 1, 1, 1, 21, 1),
                 10.0,
-                10,
-                10);
+                1,
+                0);
         this.trip1 = tripResource.save(trip);
         Trip trip2 = new Trip(
                 UUID.randomUUID().toString(),
@@ -89,7 +89,7 @@ class ReservationRepresentationTests {
                 UUID.randomUUID().toString(),
                 this.traveler,
                 this.trip1,
-                true,
+                false,
                 ReservationStatus.PENDING
         );
         reservationResource.save(reservation);
@@ -109,7 +109,7 @@ class ReservationRepresentationTests {
     void getOneReservation() {
         Reservation reservation = new Reservation(UUID.randomUUID().toString(),
                 this.traveler,
-                this.trip1,
+                this.trip2,
                 true,
                 ReservationStatus.PENDING);
         reservationResource.save(reservation);
@@ -151,24 +151,90 @@ class ReservationRepresentationTests {
     void saveReservation_BadRequest_ReservationAlreadyExists() throws Exception {
         Reservation reservation = new Reservation(UUID.randomUUID().toString(),
                 this.traveler,
-                this.trip1,
+                this.trip2,
                 true,
                 ReservationStatus.PENDING);
         reservationResource.save(reservation);
-        ReservationInput reservationInput = new ReservationInput(this.traveler.getTravelerId(),this.trip1.getTripId(), true);
+        ReservationInput reservationInput = new ReservationInput(this.traveler.getTravelerId(),this.trip2.getTripId(), true);
         given().body(toJsonString(reservationInput)).contentType(ContentType.JSON)
                 .when().post("/reservations").then().statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().response();
     }
 
     @Test
-    void saveReservation_Ok() throws Exception {
+    void saveReservation_BadRequest_NoSeatAvailable() throws Exception {
         ReservationInput reservationInput = new ReservationInput(this.traveler.getTravelerId(), this.trip1.getTripId(), true);
+        given().body(toJsonString(reservationInput)).contentType(ContentType.JSON)
+                .when().post("/reservations").then().statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void saveReservation_Ok() throws Exception {
+        ReservationInput reservationInput = new ReservationInput(this.traveler.getTravelerId(), this.trip1.getTripId(), false);
         Response response = given().body(toJsonString(reservationInput)).contentType(ContentType.JSON)
                 .when().post("/reservations").then().statusCode(HttpStatus.SC_CREATED)
                 .extract().response();
         String location = response.getHeader("Location");
         when().get(location).then().statusCode(HttpStatus.SC_OK);
+    }
+
+    @Test
+    void cancelReservation_NotFound_NoReservation() {
+        when().delete("/reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void cancelReservation_BadRequest_ReservationConfirmed() {
+        Reservation reservation = new Reservation(UUID.randomUUID().toString(),
+                this.traveler,
+                this.trip2,
+                true,
+                ReservationStatus.CONFIRMED);
+        reservationResource.save(reservation);
+        when().delete("/reservations/" + reservation.getReservationId())
+                .then().statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void cancelReservation_Ok() {
+        Reservation reservation = new Reservation(UUID.randomUUID().toString(),
+                this.traveler,
+                this.trip2,
+                true,
+                ReservationStatus.PENDING);
+        reservationResource.save(reservation);
+        when().delete("/reservations/" + reservation.getReservationId())
+                .then().statusCode(HttpStatus.SC_NO_CONTENT);
+    }
+
+    @Test
+    void confirmReservation_NotFound_NoReservation() {
+        when().patch("/reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void confirmReservation_BadRequest_ReservationConfirmed() {
+        Reservation reservation = new Reservation(UUID.randomUUID().toString(),
+                this.traveler,
+                this.trip2,
+                true,
+                ReservationStatus.CONFIRMED);
+        reservationResource.save(reservation);
+        when().patch("/reservations/" + reservation.getReservationId()).then().statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void confirmReservation_Ok() {
+        Reservation reservation = new Reservation(UUID.randomUUID().toString(),
+                this.traveler,
+                this.trip2,
+                true,
+                ReservationStatus.PENDING);
+        reservationResource.save(reservation);
+        Response response = when().patch("/reservations/" + reservation.getReservationId())
+                .then().statusCode(HttpStatus.SC_OK).extract().response();
+        String jsonAsString = response.asString();
+        assertThat(jsonAsString, containsString("CONFIRMED"));
     }
 
     private String toJsonString(Object r) throws Exception {

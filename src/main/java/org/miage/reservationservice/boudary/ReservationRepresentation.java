@@ -1,6 +1,5 @@
 package org.miage.reservationservice.boudary;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.miage.reservationservice.entity.Reservation;
 import org.miage.reservationservice.entity.ReservationInput;
 import org.miage.reservationservice.entity.Traveler;
@@ -63,13 +62,50 @@ public class ReservationRepresentation {
         Optional<Reservation> reservation = rr.findByTravelerAndTrip(traveler.get(), trip.get());
         if (reservation.isPresent())
             throw new APIException(400, "Une réservation pour ce voyageur et ce trajet existe déjà");
+        Trip existingTrip = trip.get();
+        boolean isSeatAvailable = (reservationInput.isWindowSeat() && existingTrip.getNumWindow() > 0) ||
+                (!reservationInput.isWindowSeat() && existingTrip.getNumCorridor() > 0);
+        if (!isSeatAvailable)
+            throw new APIException(400, String.format("Il n'y a plus de place côté %s pour ce voyage", reservationInput.isWindowSeat() ? "fenêtre" : "couloir"));
+        existingTrip.decrementSeat(reservationInput.isWindowSeat());
+        trir.save(existingTrip);
         Reservation toSave = new Reservation(UUID.randomUUID().toString(),
                 traveler.get(),
-                trip.get(),
+                existingTrip,
                 reservationInput.isWindowSeat(),
                 ReservationStatus.PENDING);
         Reservation saved = rr.save(toSave);
         URI location = linkTo(ReservationRepresentation.class).slash(saved.getReservationId()).toUri();
         return ResponseEntity.created(location).build();
+    }
+
+    @DeleteMapping("/{reservationId}")
+    @Transactional
+    public ResponseEntity<?> cancelReservation(@PathVariable String reservationId) {
+        var reservation = rr.findById(reservationId);
+        if (reservation.isEmpty())
+            throw new APIException(404, "La réservation n'existe pas");
+        var status = reservation.get().getStatus();
+        if (status == ReservationStatus.CONFIRMED)
+            throw new APIException(400, "Impossible d'annuler une réservation déjà confirmée");
+        rr.delete(reservation.get());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{reservationId}")
+    @Transactional
+    public ResponseEntity<Reservation> confirmReservation(@PathVariable String reservationId) {
+        var reservation = rr.findById(reservationId);
+        if (reservation.isEmpty()) {
+            throw new APIException(404, "La réservation n'existe pas");
+        }
+        var status = reservation.get().getStatus();
+        if (status == ReservationStatus.CONFIRMED) {
+            throw new APIException(400, "La réservation a déjà été confirmée");
+        }
+        Reservation existingReservation = reservation.get();
+        existingReservation.setStatus(ReservationStatus.CONFIRMED);
+        Reservation saved = rr.save(existingReservation);
+        return ResponseEntity.ok(saved);
     }
 }

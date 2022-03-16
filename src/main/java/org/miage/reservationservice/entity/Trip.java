@@ -57,6 +57,11 @@ public class Trip implements Serializable {
         this.numWindow = numWindow;
     }
 
+    public void decrementSeat(boolean isWindowSeat) {
+        if (isWindowSeat) numWindow--;
+        else numCorridor--;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
