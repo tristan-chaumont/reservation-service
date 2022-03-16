@@ -1,11 +1,15 @@
 package org.miage.reservationservice.boudary;
 
+import org.hibernate.EntityMode;
+import org.miage.reservationservice.control.ReservationAssembler;
 import org.miage.reservationservice.entity.Reservation;
 import org.miage.reservationservice.entity.ReservationInput;
 import org.miage.reservationservice.entity.Traveler;
 import org.miage.reservationservice.entity.Trip;
 import org.miage.reservationservice.types.ReservationStatus;
 import org.miage.reservationservice.exception.APIException;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.ExposesResourceFor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,25 +30,27 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 public class ReservationRepresentation {
 
     private final ReservationResource rr;
+    private final ReservationAssembler ra;
     private final TravelerResource trar;
     private final TripResource trir;
 
-    public ReservationRepresentation(ReservationResource rr, TravelerResource trar, TripResource trir) {
+    public ReservationRepresentation(ReservationResource rr, ReservationAssembler ra, TravelerResource trar, TripResource trir) {
         this.rr = rr;
+        this.ra = ra;
         this.trar = trar;
         this.trir = trir;
     }
 
     @GetMapping
-    public ResponseEntity<List<Reservation>> getAllReservations() {
-        return ResponseEntity.ok(rr.findAll());
+    public ResponseEntity<CollectionModel<EntityModel<Reservation>>> getAllReservations() {
+        return ResponseEntity.ok(ra.toCollectionModel(rr.findAll()));
     }
 
     @GetMapping("/{reservationId}")
-    public ResponseEntity<Reservation> getOneReservation(@PathVariable String reservationId) {
+    public ResponseEntity<EntityModel<Reservation>> getOneReservation(@PathVariable String reservationId) {
         return Optional.of(rr.findById(reservationId))
                 .filter(Optional::isPresent)
-                .map(i -> ResponseEntity.ok(i.get()))
+                .map(i -> ResponseEntity.ok(ra.toModel(i.get())))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -79,33 +85,33 @@ public class ReservationRepresentation {
         return ResponseEntity.created(location).build();
     }
 
-    @DeleteMapping("/{reservationId}")
+    @DeleteMapping("/{reservationId}/cancel")
     @Transactional
     public ResponseEntity<?> cancelReservation(@PathVariable String reservationId) {
         var reservation = rr.findById(reservationId);
         if (reservation.isEmpty())
             throw new APIException(404, "La réservation n'existe pas");
         var status = reservation.get().getStatus();
-        if (status == ReservationStatus.CONFIRMED)
-            throw new APIException(400, "Impossible d'annuler une réservation déjà confirmée");
+        if (status == ReservationStatus.CONFIRMED || status == ReservationStatus.PAID)
+            throw new APIException(400, "Impossible d'annuler une réservation déjà confirmée ou payée");
         rr.delete(reservation.get());
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{reservationId}")
+    @PatchMapping("/{reservationId}/confirm")
     @Transactional
-    public ResponseEntity<Reservation> confirmReservation(@PathVariable String reservationId) {
+    public ResponseEntity<EntityModel<Reservation>> confirmReservation(@PathVariable String reservationId) {
         var reservation = rr.findById(reservationId);
         if (reservation.isEmpty()) {
             throw new APIException(404, "La réservation n'existe pas");
         }
         var status = reservation.get().getStatus();
-        if (status == ReservationStatus.CONFIRMED) {
-            throw new APIException(400, "La réservation a déjà été confirmée");
+        if (status == ReservationStatus.CONFIRMED || status == ReservationStatus.PAID) {
+            throw new APIException(400, "La réservation a déjà été confirmée ou payée");
         }
         Reservation existingReservation = reservation.get();
         existingReservation.setStatus(ReservationStatus.CONFIRMED);
         Reservation saved = rr.save(existingReservation);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(ra.toModel(saved));
     }
 }

@@ -48,12 +48,13 @@ public class TripRepresentation {
      * @return Trips from time wanted.
      */
     @GetMapping("/{cityA}/{cityB}")
-    public ResponseEntity<List<Trip>> getTripsFromTime(
+    public ResponseEntity<CollectionModel<EntityModel<Trip>>> getTripsFromTime(
             @PathVariable("cityA") String cityA,
             @PathVariable("cityB") String cityB,
             @RequestParam(required = false) String type,
             @RequestParam String date,
-            @RequestParam boolean windowSeat) {
+            @RequestParam boolean windowSeat,
+            @RequestParam(required = false) boolean sortByPrice) {
         // vérification du type de voyage
         if (type != null && (!type.equals("aller") && !type.equals("aller-retour"))) {
             throw new APIException(400, "Le type du trajet doit être 'aller' ou 'aller-retour'");
@@ -118,6 +119,10 @@ public class TripRepresentation {
             }
         }
 
-        return ResponseEntity.ok(filteredTrips);
+        if (sortByPrice) {
+            return ResponseEntity.ok(ta.toCollectionModel(filteredTrips.stream().sorted((a, b) -> (int) (a.getPrice() - b.getPrice())).toList()));
+        } else {
+            return ResponseEntity.ok(ta.toCollectionModel(filteredTrips));
+        }
     }
 }

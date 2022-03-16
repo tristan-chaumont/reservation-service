@@ -1,6 +1,7 @@
 package org.miage.reservationservice;
 
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,9 @@ import org.springframework.test.context.TestPropertySource;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestPropertySource(locations = "classpath:application.properties")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -45,5 +48,20 @@ class TravelerRepresentationTests {
         travelerResource.save(traveler2);
         when().get("/travelers").then().statusCode(HttpStatus.SC_OK)
                 .and().assertThat().body("size()", equalTo(2));
+    }
+
+    @Test
+    void getOneTraveler_NotFound() {
+        when().get("/travelers/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void getOneTraveler() {
+        Traveler traveler1 = new Traveler(UUID.randomUUID().toString(), "TEST");
+        travelerResource.save(traveler1);
+        Response response = when().get("/travelers/" + traveler1.getTravelerId()).then()
+                .statusCode(HttpStatus.SC_OK).extract().response();
+        String jsonAsString = response.asString();
+        assertThat(jsonAsString, containsString("TEST"));
     }
 }

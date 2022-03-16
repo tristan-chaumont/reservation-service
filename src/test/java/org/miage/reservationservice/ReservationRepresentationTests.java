@@ -121,7 +121,7 @@ class ReservationRepresentationTests {
 
     @Test
     void getOneReservation_NotFound() {
-        when().get("reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+        when().get("/reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
@@ -180,7 +180,7 @@ class ReservationRepresentationTests {
 
     @Test
     void cancelReservation_NotFound_NoReservation() {
-        when().delete("/reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+        when().delete("/reservations/0/cancel").then().statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
@@ -191,7 +191,7 @@ class ReservationRepresentationTests {
                 true,
                 ReservationStatus.CONFIRMED);
         reservationResource.save(reservation);
-        when().delete("/reservations/" + reservation.getReservationId())
+        when().delete("/reservations/" + reservation.getReservationId() + "/cancel")
                 .then().statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
@@ -203,13 +203,13 @@ class ReservationRepresentationTests {
                 true,
                 ReservationStatus.PENDING);
         reservationResource.save(reservation);
-        when().delete("/reservations/" + reservation.getReservationId())
+        when().delete("/reservations/" + reservation.getReservationId() + "/cancel")
                 .then().statusCode(HttpStatus.SC_NO_CONTENT);
     }
 
     @Test
     void confirmReservation_NotFound_NoReservation() {
-        when().patch("/reservations/0").then().statusCode(HttpStatus.SC_NOT_FOUND);
+        when().patch("/reservations/0/confirm").then().statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
@@ -220,7 +220,8 @@ class ReservationRepresentationTests {
                 true,
                 ReservationStatus.CONFIRMED);
         reservationResource.save(reservation);
-        when().patch("/reservations/" + reservation.getReservationId()).then().statusCode(HttpStatus.SC_BAD_REQUEST);
+        when().patch("/reservations/" + reservation.getReservationId() + "/confirm")
+                .then().statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     @Test
@@ -231,7 +232,7 @@ class ReservationRepresentationTests {
                 true,
                 ReservationStatus.PENDING);
         reservationResource.save(reservation);
-        Response response = when().patch("/reservations/" + reservation.getReservationId())
+        Response response = when().patch("/reservations/" + reservation.getReservationId() + "/confirm")
                 .then().statusCode(HttpStatus.SC_OK).extract().response();
         String jsonAsString = response.asString();
         assertThat(jsonAsString, containsString("CONFIRMED"));

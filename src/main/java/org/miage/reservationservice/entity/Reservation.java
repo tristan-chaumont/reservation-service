@@ -37,6 +37,7 @@ public class Reservation implements Serializable {
     private boolean windowSeat;
 
     @Column(name = "status")
+    @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
     @Override

@@ -1,6 +1,8 @@
 package org.miage.reservationservice;
 
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.UUID;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestPropertySource(locations = "classpath:application.properties")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -165,8 +168,11 @@ class TripRepresentationTests {
                 10,
                 10);
         tripResource.save(trip);
-        when().get("/trips/Metz/Nancy?date=2022-01-01T01:00&windowSeat=true").then().statusCode(HttpStatus.SC_OK)
-                .and().assertThat().body("size()", equalTo(1));
+        Response response = when().get("/trips/Metz/Nancy?date=2022-01-01T01:00&windowSeat=true").then().statusCode(HttpStatus.SC_OK)
+                .extract().response();
+        String jsonAsString = response.asString();
+        int n = StringUtils.countMatches(jsonAsString, "departureCity");
+        assertThat(n, equalTo(1));
     }
 
     @Test
@@ -191,7 +197,10 @@ class TripRepresentationTests {
                 10,
                 10);
         tripResource.save(trip2);
-        when().get("/trips/Metz/Nancy?date=2022-01-01T01:00&windowSeat=true&type=aller-retour").then().statusCode(HttpStatus.SC_OK)
-                .and().assertThat().body("size()", equalTo(1));
+        Response response = when().get("/trips/Metz/Nancy?date=2022-01-01T01:00&windowSeat=true&type=aller-retour").then().statusCode(HttpStatus.SC_OK)
+                .extract().response();
+        String jsonAsString = response.asString();
+        int n = StringUtils.countMatches(jsonAsString, "departureCity");
+        assertThat(n, equalTo(1));
     }
 }
