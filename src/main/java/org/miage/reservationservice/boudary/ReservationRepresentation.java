@@ -1,24 +1,24 @@
 package org.miage.reservationservice.boudary;
 
-import org.hibernate.EntityMode;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.miage.reservationservice.control.ReservationAssembler;
-import org.miage.reservationservice.entity.Reservation;
-import org.miage.reservationservice.entity.ReservationInput;
-import org.miage.reservationservice.entity.Traveler;
-import org.miage.reservationservice.entity.Trip;
+import org.miage.reservationservice.entity.*;
+import org.miage.reservationservice.service.BankAPI;
 import org.miage.reservationservice.types.ReservationStatus;
 import org.miage.reservationservice.exception.APIException;
+import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.ExposesResourceFor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,12 +33,14 @@ public class ReservationRepresentation {
     private final ReservationAssembler ra;
     private final TravelerResource trar;
     private final TripResource trir;
+    private final BankAPI bankApi;
 
-    public ReservationRepresentation(ReservationResource rr, ReservationAssembler ra, TravelerResource trar, TripResource trir) {
+    public ReservationRepresentation(ReservationResource rr, ReservationAssembler ra, TravelerResource trar, TripResource trir, BankAPI bankApi) {
         this.rr = rr;
         this.ra = ra;
         this.trar = trar;
         this.trir = trir;
+        this.bankApi = bankApi;
     }
 
     @GetMapping
@@ -113,5 +115,30 @@ public class ReservationRepresentation {
         existingReservation.setStatus(ReservationStatus.CONFIRMED);
         Reservation saved = rr.save(existingReservation);
         return ResponseEntity.ok(ra.toModel(saved));
+    }
+
+    @PatchMapping("/{reservationId}/pay")
+    @Transactional
+    public ResponseEntity<BankResponse> payReservation(@PathVariable String reservationId) {
+        var reservation = rr.findById(reservationId);
+        if (reservation.isEmpty()) {
+            throw new APIException(404, "La réservation n'existe pas");
+        }
+        var status = reservation.get().getStatus();
+        if (status == ReservationStatus.PENDING || status == ReservationStatus.PAID) {
+            throw new APIException(400, "La réservation n'a pas été confirmée ou est déjà payée");
+        }
+
+        Reservation existingReservation = reservation.get();
+
+        BankResponse response = bankApi.callBankAPI(existingReservation.getTraveler().getName(), existingReservation.getTrip().getPrice());
+
+        if (response.isPaymentAuthorized()) {
+            existingReservation.setStatus(ReservationStatus.PAID);
+            rr.save(existingReservation);
+            return ResponseEntity.ok(response);
+        } else {
+            throw new APIException(400, "Réservation non autorisée");
+        }
     }
 }

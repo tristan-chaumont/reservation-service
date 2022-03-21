@@ -7,14 +7,16 @@ import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.miage.reservationservice.boudary.ReservationResource;
 import org.miage.reservationservice.boudary.TravelerResource;
 import org.miage.reservationservice.boudary.TripResource;
-import org.miage.reservationservice.entity.Reservation;
-import org.miage.reservationservice.entity.ReservationInput;
-import org.miage.reservationservice.entity.Traveler;
-import org.miage.reservationservice.entity.Trip;
+import org.miage.reservationservice.entity.*;
+import org.miage.reservationservice.service.BankAPI;
 import org.miage.reservationservice.types.ReservationStatus;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -28,9 +30,11 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 
 @TestPropertySource(locations = "classpath:application.properties")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ExtendWith(MockitoExtension.class)
 class ReservationRepresentationTests {
 
     @LocalServerPort
@@ -44,6 +48,9 @@ class ReservationRepresentationTests {
 
     @Autowired
     TripResource tripResource;
+
+    @Mock
+    BankAPI bankAPI;
 
     private Traveler traveler;
     private Trip trip1, trip2;
