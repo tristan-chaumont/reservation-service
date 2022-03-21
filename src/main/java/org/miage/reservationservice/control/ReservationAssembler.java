@@ -31,7 +31,7 @@ public class ReservationAssembler implements RepresentationModelAssembler<Reserv
         }
 
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
-            //PAY
+            links.add(linkTo(methodOn(ReservationRepresentation.class).payReservation(reservation.getReservationId())).withRel("pay"));
         }
 
         links.add(linkTo(methodOn(ReservationRepresentation.class).getAllReservations()).withRel("collection"));
