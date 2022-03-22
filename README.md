@@ -36,21 +36,54 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 
 ### Traveler
 
-```GET /travelers``` : renvoie la liste des voyageurs
+`GET /travelers` : renvoie la liste des voyageurs
 - `200` : la liste des voyageurs
 
-```GET /travelers/{travelerId}``` : renvoie un voyageur en particulier
+`GET /travelers/{travelerId}` : renvoie un voyageur en particulier
 - `200` : le voyageur dont l'id correspond
 - `404` : si le voyageur n'existe pas
 
-```GET /travelers/{travelerId}/reservations``` : renvoie la liste des réservations d'un voyageur en particulier
+`GET /travelers/{travelerId}/reservations` : renvoie la liste des réservations d'un voyageur en particulier
 - `200` : la liste des réservations du voyageur
 - `404` : si le voyageur n'existe pas
 
-```GET /travelers/{travelerId}/favorites?date=yyyy-MM-ddTHH:mm``` : renvoie les trajets préférés du voyageur, uniquement s'il existe un voyage à la date spécifiée en *RequestParam*. Cette recherche se base sur le nombre de voyage fait par un voyageur entre deux villes, triéé par ordre décroissant.
-- `200` : la liste des trajets préférés
-- `400` : si le format de la date de convient pas (yyyy-MM-ddTHH:mm -> 2022-03-25T11:00)
-- `404` : si le voyageur n'existe pas ou s'il n'y a pas de voyage disponible pour cette date
+`GET /travelers/{travelerId}/favorites?date=yyyy-MM-ddTHH:mm` : renvoie les trajets préférés du voyageur, uniquement s'il existe un voyage à la date spécifiée en *RequestParam*. Cette recherche se base sur le nombre de voyage fait par un voyageur entre deux villes, triéé par ordre décroissant.
+- RequestParam
+  - `date (required)` : la date de départ au format yyyy-MM-ddTHH:mm
+- Codes de réponse
+  - `200` : la liste des trajets préférés
+  - `400` : si le format de la date de convient pas (yyyy-MM-ddTHH:mm -> 2022-03-25T11:00)
+  - `404` : 
+    - si le voyageur n'existe pas
+    - s'il n'y a pas de voyage disponible pour cette date
 
+#### Liens HETOAS du Traveler
 
-- `200` : 
+- **self** : `GET /travelers/{travelerId}`
+- **myReservations** : `GET /travelers/{travelerId}/reservations`
+- **collection** : `GET /travelers`
+
+### Trip
+
+`GET /trips` : renvoie la liste de tous les voyages
+- `200` : la liste des voyages
+
+`GET /trips/{tripId}` : renvoie un voyage en particulier
+- `200` : le voyage dont l'id correspond
+- `404` : si le voyage n'existe pas
+
+`GET /trips/{cityA}/{cityB}?date=yyyy-MM-ddTHH:mm&type=aller&windowSeat=true&sortByPrice=true` : renvoie la liste des voyages qui remplissent les critères de sélection (aller/aller-retour, trié par prix, place côté fenêtre ou couloir). Un voyage est renvoyé uniquement si son jour de départ correspond au jour de la date renseignée par le voyageur.
+- RequestParam
+  - `date (required)` : la date de départ au format yyyy-MM-ddTHH:mm
+  - `windowSeat (required)` : place côté fenêtre si `true`, côté couloir sinon
+  - `type` : `aller` ou `aller-retour`, par défaut `aller`
+  - `sortByPrice` : voyages triés par prix si `true`. Par défaut trié par date.
+- Codes de réponse
+  - `200` : la liste des voyages
+  - `400` :
+    - le type du trajet ne correspond pas (`aller` ou `aller-retour`)
+    - la date de départ n'est pas au bon format
+  - `404` :
+    - s'il n'y a pas de trajet de {cityA} vers {cityB} (ou, par extension, si une des deux villes n'existe pas)
+    - s'il n'y a pas de trajet de {cityA} vers {cityB} pour {date} et {windowSeat}
+    - si type = `aller-retour`, s'il n'y a pas de trajet retour dans la semaine qui suit le trajet cherché
