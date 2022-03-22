@@ -28,7 +28,7 @@ Chaque entité est composé des éléments suivants (en ignorant l'id de chaque 
 La DB utilisée pour le service est une base PostgreSQL sous Docker. Le fichier `docker-compose.yml` est à la racine du projet. Pour la créer :
 ``` docker-compose up --build -d```
 
-Je ne crée pas de volume donc la container est entièrement supprimé à chaque arrêt de Docker.
+Je ne crée pas de volume donc le container est entièrement supprimé à chaque arrêt de Docker.
 
 Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 
