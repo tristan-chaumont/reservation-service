@@ -57,7 +57,7 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
     - si le voyageur n'existe pas
     - s'il n'y a pas de voyage disponible pour cette date
 
-#### Liens HETOAS du Traveler
+#### Liens HETOAS de Traveler
 
 - **self** : `GET /travelers/{travelerId}`
 - **myReservations** : `GET /travelers/{travelerId}/reservations`
@@ -84,6 +84,12 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
     - le type du trajet ne correspond pas (`aller` ou `aller-retour`)
     - la date de départ n'est pas au bon format
   - `404` :
-    - s'il n'y a pas de trajet de {cityA} vers {cityB} (ou, par extension, si une des deux villes n'existe pas)
-    - s'il n'y a pas de trajet de {cityA} vers {cityB} pour {date} et {windowSeat}
+    - s'il n'y a pas de trajet de `cityA` vers `cityB` (ou, par extension, si une des deux villes n'existe pas)
+    - s'il n'y a pas de trajet de `cityA` vers `cityB` pour `date` et `windowSeat`
     - si type = `aller-retour`, s'il n'y a pas de trajet retour dans la semaine qui suit le trajet cherché
+
+#### Liens HETOAS de Trip
+
+- **self** : `GET /trips/{tripId}`
+- **book** : `POST /reservations` (il faut compléter le RequestBody ensuite)
+- **collection** : `GET /trips`
