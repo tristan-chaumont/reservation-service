@@ -1,4 +1,4 @@
-# Projet API - Tristan Chaumont - M2 ACSI
+# Projet API - Tristan Chaumont - M2 ACSI - Reservation service
 
 Le projet est composé de deux services
 - [reservation-service](https://github.com/tristan-chaumont/reservation-service) qui est le service principal
