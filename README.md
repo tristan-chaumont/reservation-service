@@ -77,7 +77,7 @@ Des données de test sont pré-insérées dans la base pour pouvoir utiliser le 
 | `trip_id` | '1' | '2' | '3' | '4' | '5' | '6' |
 | `departure_city` | 'NANCY' | 'METZ' | 'METZ' | 'PONT-A-MOUSSON' | 'METZ' | 'NANCY' |
 | `arrival_city` | 'METZ' | 'NANCY' | 'THIONVILLE' | 'NANCY' | 'NANCY' | 'METZ' |
-| `departurue_time` | 2022-03-25T12:50:00 | 2022-03-25T16:32:00 | 2022-03-25T13:33:00 | 2022-03-25T14:23:00 | 2022-07-25T09:07:00 | 2022-07-26T14:23:00 |
+| `departure_time` | 2022-03-25T12:50:00 | 2022-03-25T16:32:00 | 2022-03-25T13:33:00 | 2022-03-25T14:23:00 | 2022-07-25T09:07:00 | 2022-07-26T14:23:00 |
 | `arrival_time` | 2022-03-25T13:28:00 | 2022-03-25T17:10:00 | 2022-03-25T13:56:00 | 2022-03-25T14:40:00 | 2022-07-25T09:45:00 | 2022-07-26T14:40:00 |
 | `price` | 10 | 9 | 8 | 5 | 8 | 5 |
 | `num_corridor` | 50 | 50 | 0 | 50 | 50 | 50 |
