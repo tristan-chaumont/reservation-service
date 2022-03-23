@@ -23,6 +23,10 @@ Chaque entité est composé des éléments suivants (en ignorant l'id de chaque 
 | **numCorridor** : le nombre de places côté couloir | | |
 | **numWindow** : le nombre de places côté fenêtre | | |
 
+Pour les réservations *aller-retour*, puisque l'on a pas d'interface graphique à disposition et que les entrées de l'utilisateur ne sont pas sauvegardées, il faut d'abord réserver son voyage aller, puis son voyage retour. Le paramètre `type=aller-retour` pour la requête qui cherche les voyages ne sert donc qu'à vérifier s'il existe effectivement des voyages retour la semaine suivant le trajet aller.
+
+De même, ma conception ne différencie pas les voyages aller des voyages retour, car je les sauvegarde de la même manière au sein de la DB, il n'y a pas d'attribut qui indique que le voyage est un aller ou un retour dans la DB, car je n'en voyais pas l'utilité ici.
+
 ## Database
 
 La DB utilisée pour le service est une base PostgreSQL sous Docker. Le fichier `docker-compose.yml` est à la racine du projet. Pour la créer :
@@ -32,6 +36,19 @@ Je ne crée pas de volume donc le container est entièrement supprimé à chaque
 
 Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 
+## Swagger
+
+La documentation Swagger est basique et est disponible au lien suivant : `localhost:<PORT>/swagger-ui/index.html`
+
+## Communication avec le service Bank
+
+La communication avec le service Bank fonctionne de la même manière que l'exemple conversion-bourse que l'on a étudié durant le cours. J'utilise une classe `BankResponse` pour transférer les données d'un service à un autre et qui contient les éléments suivants :
+- `paymentAuthorized` : un booléen qui indique si le paiement est autorisé ou non
+- `username` : le nom de l'utilisateur (je n'utilise pas l'id de l'utilisateur pour stocker les données dans la banque mais son nom)
+- `port` : le port utilisé
+
+Pour le CircuitBreaker, la fonction fallBack renvoie une interdiction de paiement (donc le booléen à `false`) 
+
 ## API
 
 ### Traveler
@@ -40,14 +57,22 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 - `200` : la liste des voyageurs
 
 `GET /travelers/{travelerId}` : renvoie un voyageur en particulier
-- `200` : le voyageur dont l'id correspond
-- `404` : si le voyageur n'existe pas
+- PathVariable
+  - `travelerId` : l'id du voyageur
+- Codes de réponse 
+  - `200` : le voyageur dont l'id correspond
+  - `404` : si le voyageur n'existe pas
 
 `GET /travelers/{travelerId}/reservations` : renvoie la liste des réservations d'un voyageur en particulier
-- `200` : la liste des réservations du voyageur
-- `404` : si le voyageur n'existe pas
+- PathVariable
+  - `travelerId` : l'id du voyageur
+- Codes de réponse
+  - `200` : la liste des réservations du voyageur
+  - `404` : si le voyageur n'existe pas
 
 `GET /travelers/{travelerId}/favorites?date=yyyy-MM-ddTHH:mm` : renvoie les trajets préférés du voyageur, uniquement s'il existe un voyage à la date spécifiée en *RequestParam*. Cette recherche se base sur le nombre de voyage fait par un voyageur entre deux villes, triéé par ordre décroissant.
+- PathVariable
+  - `travelerId` : l'id du voyageur
 - RequestParam
   - `date (required)` : la date de départ au format yyyy-MM-ddTHH:mm
 - Codes de réponse
@@ -69,10 +94,16 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 - `200` : la liste des voyages
 
 `GET /trips/{tripId}` : renvoie un voyage en particulier
-- `200` : le voyage dont l'id correspond
-- `404` : si le voyage n'existe pas
+- PathVariable
+  - `tripId` : l'id du voyage 
+- Codes de réponse
+  - `200` : le voyage dont l'id correspond
+  - `404` : si le voyage n'existe pas
 
 `GET /trips/{cityA}/{cityB}?date=yyyy-MM-ddTHH:mm&type=aller&windowSeat=true&sortByPrice=true` : renvoie la liste des voyages qui remplissent les critères de sélection (aller/aller-retour, trié par prix, place côté fenêtre ou couloir). Un voyage est renvoyé uniquement si son jour de départ correspond au jour de la date renseignée par le voyageur.
+- PathVariable
+  - `cityA` : la ville de départ (exemple : Metz)
+  - `cityB` : la ville d'arrivée (exemple : Nancy)
 - RequestParam
   - `date (required)` : la date de départ au format yyyy-MM-ddTHH:mm
   - `windowSeat (required)` : place côté fenêtre si `true`, côté couloir sinon
@@ -93,3 +124,66 @@ Pour les tests, j'utilise simplement une base H2, donc il n'y a rien à faire.
 - **self** : `GET /trips/{tripId}`
 - **book** : `POST /reservations` (il faut compléter le RequestBody ensuite)
 - **collection** : `GET /trips`
+
+### Reservation
+
+`GET /reservations` : renvoie la liste de toutes les réservations
+- `200` : la liste des reservations
+
+`GET /reservations/{reservationId}` : renvoie une réservation en particulier
+- PathVariable
+  - `reservationId` : l'id de la réservation
+- Codes de réponse
+  - `200` : la réservation dont l'id correspond
+  - `404` : si la réservation n'existe pas
+
+`POST /reservations` : crée une nouvelle réservation
+- RequestBody
+  - ReservationInput
+    - `travelerId` : l'id du voyageur
+    - `tripId` : l'id du voyage
+    - `windowSeat` : `true` si place côté fenêtre, `false` sinon
+- Codes de réponse
+  - `201` : réservation créée -> renvoie l'URI de la réservation (`GET /reservations/{reservationId}`)
+  - `400` : 
+    - si une réservation pour le voyageur et le trajet existe déjà
+    - il n'y a plus de place côté fenêtre ou couloir (selon le choix de l'utilisateur)
+  - `404` :
+    - si l'id du voyage n'existe pas
+    - si l'id du voyageur n'existe pas
+
+`DELETE /reservations/{reservationId}/cancel` : annule une réservation (se traduit par la suppression de la réservation dans la db)
+ - PathVariable
+  - `reservationId` : l'id de la réservation
+ - Codes de réponse
+  - `204` : la réservation est annulée (donc supprimée)
+  - `400` : si la réservation est déjà confirmée ou payée
+  - `404` : si la réservation n'existe pas
+
+`PATCH /reservations/{reservationId}/confirm` : confirme une réservation passée (se traduit par la changement de l'état de *PENDING* à *CONFIRMED*)
+- PathVariable
+  - `reservationId` : l'id de la réservation
+- Codes de réponse
+  - `200` : la réservation est confirmée et l'état est modifié
+  - `400` : si la réservation a déjà été confirmée ou payée
+  - `404` : si la réservation n'existe pas
+
+`PATCH /reservations/{reservationId}/pay` : paie une réservation confirmée (appelle le service Bank pour autoriser le paiement). L'état passe de *CONFIRMED* à *PAID*.
+- PathVariable
+  - `reservationId` : l'id de la réservation
+- Codes de réponse
+  - `200` : la réservation est payée et l'état est modifié
+  - `400`
+    - si la réservation n'a pas été confirmée ou est déjà payée
+    - si le service Bank n'a pas autorisé le paiement
+  - `404` : si la réservation n'existe pas
+
+#### Liens HETOAS de Reservation
+
+- **self** : `GET /reservations/{reservationId}`
+- **collection** : `GET /reservations`
+- Si l'état est *PENDING*
+  - **cancel** : `DELETE /reservations/{reservationId}/cancel`
+  - **confirm** : `PATCH /reservations/{reservationId}/confirm`
+- Si l'état est *CONFIRMED*
+  - **pay** : `PATCH /reservations/{reservationId}/pay` 
