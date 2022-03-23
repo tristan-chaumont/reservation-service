@@ -49,6 +49,42 @@ La communication avec le service Bank fonctionne de la même manière que l'exem
 
 Pour le CircuitBreaker, la fonction fallBack renvoie une interdiction de paiement (donc le booléen à `false`) 
 
+## Données de test
+
+Des données de test sont pré-insérées dans la base pour pouvoir utiliser le service.
+
+### Traveler
+
+| | Traveler 1 | Traveler 2 |
+| --- | --- | --- |
+| `traveler_id` | '1' | '2' |
+| `name` | 'Chaumont' | 'Noirot' |
+
+### Reservation
+
+| | Reservation 1 | Reservation 2 | Reservation 3 |
+| --- | --- | --- | --- |
+| `reservation_id` | '1' | '2' | '3' |
+| `traveler_id` | '1' | '1' | '2' |
+| `trip_id` | '1' | '2' | '3' |
+| `window_seat` | true | false | true |
+| `status` | 'PAID' | 'CONFIRMED' | 'PENDING' |
+
+### Trip
+
+| | Trip 1 | Trip 2 | Trip 3 | Trip 4 | Trip 5 | Trip 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `trip_id` | '1' | '2' | '3' | '4' | '5' | '6' |
+| `departure_city` | 'NANCY' | 'METZ' | 'METZ' | 'PONT-A-MOUSSON' | 'METZ' | 'NANCY' |
+| `arrival_city` | 'METZ' | 'NANCY' | 'THIONVILLE' | 'NANCY' | 'NANCY' | 'METZ' |
+| `departurue_time` | 2022-03-25T12:50:00 | 2022-03-25T16:32:00 | 2022-03-25T13:33:00 | 2022-03-25T14:23:00 | 2022-07-25T09:07:00 | 2022-07-26T14:23:00 |
+| `arrival_time` | 2022-03-25T13:28:00 | 2022-03-25T17:10:00 | 2022-03-25T13:56:00 | 2022-03-25T14:40:00 | 2022-07-25T09:45:00 | 2022-07-26T14:40:00 |
+| `price` | 10 | 9 | 8 | 5 | 8 | 5 |
+| `num_corridor` | 50 | 50 | 0 | 50 | 50 | 50 |
+| `num_window` | 50 | 50 | 50 | 0 | 50 | 50 |
+
+Le voyage 3 n'a pas de place côté couloir, le voyage 4 pas de place côté fenêtre. Les 4 premiers trajets sont prévus pour le 25 mars 2022, les 2 derniers pour le 25 juillet.
+
 ## API
 
 ### Traveler
