@@ -49,6 +49,10 @@ La communication avec le service Bank fonctionne de la même manière que l'exem
 
 Pour le CircuitBreaker, la fonction fallBack renvoie une interdiction de paiement (donc le booléen à `false`) 
 
+## Consul
+
+`docker run -d --name consul -p 8500:8500 consul`
+
 ## Données de test
 
 Des données de test sont pré-insérées dans la base pour pouvoir utiliser le service.
